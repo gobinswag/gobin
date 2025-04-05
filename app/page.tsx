@@ -259,6 +259,9 @@ export default function RecyclingScanner() {
                         src={image} 
                         alt="Scanned item" 
                         className="w-full h-full object-contain blur-sm opacity-50"
+                        width={500}
+                        height={300}
+                        unoptimized={true}
                       />
                     </div>
                   )}
@@ -292,6 +295,9 @@ export default function RecyclingScanner() {
                           src={image} 
                           alt="Scanned item" 
                           className="h-full w-full object-cover"
+                          width={64}
+                          height={64}
+                          unoptimized={true}
                         />
                       </div>
                     )}
