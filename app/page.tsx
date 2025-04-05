@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
-import { FiCamera, FiUpload, FiX, FiCheck, FiInfo, FiArrowRight, FiRepeat, FiHome, FiActivity, FiUsers, FiUser, FiSun, FiMoon } from 'react-icons/fi';
+import { FiCamera, FiUpload, FiX, FiCheck, FiInfo, FiArrowRight, FiHome, FiActivity, FiUsers, FiSun, FiMoon } from 'react-icons/fi';
 import { IBM_Plex_Sans, Inter } from 'next/font/google';
 import Gobin from '@/public/gobinlogo.svg'
 import Image from 'next/image';
