@@ -6,7 +6,6 @@ import { IBM_Plex_Sans, Inter } from 'next/font/google';
 import Gobin from '@/public/gobinlogo.svg'
 import Image from 'next/image';
 
-// Load fonts
 const ibmPlexSans = IBM_Plex_Sans({
   weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
@@ -42,23 +41,78 @@ type ApiResponse = {
   material: string;
   recyclability_score: number;
   recycling_statistics: {
+    global_recycling_rate: string;
     processing_notes: string;
     common_issues: string[];
   };
+  biotech_insights: {
+    biodegradable: boolean;
+    bio_recycling_applicable: boolean;
+    biotech_notes: string;
+  };
   recommendation: string;
+};
+
+// Radial Progress Bar Component
+const RadialProgressBar = ({ percentage, size = 60, strokeWidth = 5, color = '#2E86C1', darkMode = false }: {
+  percentage: number;
+  size?: number;
+  strokeWidth?: number;
+  color?: string;
+  darkMode?: boolean;
+}) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="transform -rotate-90"
+      >
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="transparent"
+          stroke={darkMode ? '#5D6D7E' : '#E0E0E0'}
+          strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="transparent"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          className="transition-all duration-1000 ease-out"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          {percentage}%
+        </span>
+      </div>
+    </div>
+  );
 };
 
 export default function RecyclingScanner() {
   const [step, setStep] = useState<'upload' | 'scanning' | 'results'>('upload');
   const [image, setImage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showDetails, setShowDetails] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showDetails, setShowDetails] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    // Check for dark mode preference
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setDarkMode(isDark);
   }, []);
@@ -80,13 +134,11 @@ export default function RecyclingScanner() {
     setStep('scanning');
     
     try {
-      // Create form data for the image
       const formData = new FormData();
       if (fileInputRef.current?.files?.[0]) {
         formData.append('image', fileInputRef.current.files[0]);
       }
 
-      // Make API call to the AI endpoint
       const response = await fetch('/api/ai', {
         method: 'POST',
         body: formData,
@@ -98,7 +150,6 @@ export default function RecyclingScanner() {
 
       const apiData: ApiResponse = await response.json();
       
-      // Transform API response to match ScanResult format
       const transformedResult: ScanResult = {
         material: apiData.detected_object,
         isRecyclable: apiData.recyclable,
@@ -109,7 +160,7 @@ export default function RecyclingScanner() {
             percentage: apiData.recyclability_score,
             recyclable: getRecyclabilityLevel(apiData.recyclability_score),
             co2Impact: getCO2Impact(apiData.recyclability_score),
-            description: apiData.recycling_statistics.processing_notes,
+            description: `global_recycling_rate: ${apiData.recycling_statistics.global_recycling_rate}, processing_notes: ${apiData.recycling_statistics.processing_notes}, biodegradable: ${apiData.biotech_insights.biodegradable}, bio_recycling_applicable: ${apiData.biotech_insights.bio_recycling_applicable}, biotech_notes: ${apiData.biotech_insights.biotech_notes}`,
             disposalTips: [
               ...apiData.recycling_statistics.common_issues,
               apiData.recommendation
@@ -123,7 +174,6 @@ export default function RecyclingScanner() {
       setStep('results');
     } catch (error) {
       console.error('Error scanning item:', error);
-      // Handle error - could set an error state here
       alert('Failed to analyze image. Please try again.');
       resetScanner();
     } finally {
@@ -131,7 +181,6 @@ export default function RecyclingScanner() {
     }
   };
 
-  // Helper function to determine recyclability level based on score
   const getRecyclabilityLevel = (score: number): MaterialType['recyclable'] => {
     if (score >= 80) return 'Highly Recyclable';
     if (score >= 60) return 'Recyclable';
@@ -140,7 +189,6 @@ export default function RecyclingScanner() {
     return 'Not Recyclable';
   };
 
-  // Helper function to determine CO2 impact based on recyclability score
   const getCO2Impact = (score: number): 'Low' | 'Medium' | 'High' => {
     if (score >= 70) return 'Low';
     if (score >= 40) return 'Medium';
@@ -209,7 +257,7 @@ export default function RecyclingScanner() {
               {step === 'scanning' && 'Analyzing...'}
               {step === 'results' && 'Scan Results'}
             </h1>
-            <p className={`${darkMode ? 'text-[#EAECEE]/80' : 'text-[#1C1C1C]/80'} ${inter.className}`}>
+            <p className={`mt-3 text-sm ${inter.className} ${darkMode ? 'text-[#EAECEE]/80' : 'text-[#1C1C1C]/80'}`}>
               {step === 'upload' && 'Upload a photo to determine recyclability and proper disposal'}
               {step === 'scanning' && 'Our AI is analyzing the material composition'}
               {step === 'results' && 'Here are the results of your scan'}
@@ -304,19 +352,81 @@ export default function RecyclingScanner() {
                     )}
                     <div>
                       <h3 className={`text-lg font-medium ${darkMode ? 'text-[#EAECEE]' : 'text-[#1C1C1C]'} ${ibmPlexSans.className}`}>{result.material}</h3>
-                      <div className={`mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${result.isRecyclable ? 'bg-[#27AE60]/20 text-[#27AE60]' : 'bg-[#E74C3C]/20 text-[#E74C3C]'}`}>
-                        {result.isRecyclable ? 'Recyclable' : 'Not Recyclable'}
-                        {result.isRecyclable ? (
-                          <FiCheck className="ml-1 h-3 w-3" />
-                        ) : (
-                          <FiX className="ml-1 h-3 w-3" />
-                        )}
+                      <div className="flex items-center mt-1 space-x-2">
+                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${result.isRecyclable ? 'bg-[#27AE60]/20 text-[#27AE60]' : 'bg-[#E74C3C]/20 text-[#E74C3C]'}`}>
+                          {result.isRecyclable ? 'Recyclable' : 'Not Recyclable'}
+                          {result.isRecyclable ? (
+                            <FiCheck className="ml-1 h-3 w-3" />
+                          ) : (
+                            <FiX className="ml-1 h-3 w-3" />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                   <p className={`mt-3 text-sm ${inter.className} ${darkMode ? 'text-[#EAECEE]/80' : 'text-[#1C1C1C]/80'}`}>
                     {result.recyclingInfo}
                   </p>
+                  {result.materials[0] && (
+                    <div className="inline-flex items-center gap-4 px-4.5 py-2.5 mt-3 rounded-full text-xs font-medium bg-[#2E86C1]/20 text-[#2E86C1]">
+                      <RadialProgressBar 
+                        percentage={result.materials[0].percentage} 
+                        size={100} 
+                        strokeWidth={9} 
+                        color={result.materials[0].recyclable === 'Highly Recyclable' ? '#27AE60' :
+                                result.materials[0].recyclable === 'Recyclable' ? '#2E86C1' :
+                                result.materials[0].recyclable === 'Limited Recyclability' ? '#F1C40F' :
+                                result.materials[0].recyclable === 'Special Handling' ? '#8E44AD' : '#E74C3C'}
+                        darkMode={darkMode}
+                      />
+                      <div className="flex flex-col">
+                        <span className="ml-1 font-bold text-white">Recycle Score</span>
+                        <span className="ml-1 brightness-150">{result.materials[0].recyclable}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-6">
+                  <h4 className={`text-sm font-medium ${darkMode ? 'text-[#EAECEE]/60' : 'text-[#1C1C1C]/60'} uppercase tracking-wider mb-3 ${ibmPlexSans.className}`}>
+                    Recycling Statistics
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="flex justify-between mb-2">
+                      <span className={`text-sm font-medium ${inter.className} ${darkMode ? 'text-[#EAECEE]' : 'text-[#1C1C1C]'}`}>Global Recycling Rate</span>
+                      <span className={`text-sm font-medium ${inter.className} ${darkMode ? 'text-[#EAECEE]' : 'text-[#1C1C1C]'}`}>{result.materials[0]?.description.includes('global_recycling_rate') ? result.materials[0]?.description.split('global_recycling_rate: ')[1]?.split(',')[0] || '35%' : '35%'}</span>
+                    </div>
+                    <div 
+                      className={`h-2 rounded-full ${darkMode ? 'bg-[#5D6D7E]/30' : 'bg-gray-200'}`}
+                    >
+                      <div
+                        className={`h-2 rounded-full ${
+                          result.materials[0]?.recyclable === 'Highly Recyclable' ? 'bg-[#27AE60]' :
+                          result.materials[0]?.recyclable === 'Recyclable' ? 'bg-[#2E86C1]' :
+                          result.materials[0]?.recyclable === 'Limited Recyclability' ? 'bg-[#F1C40F]' :
+                          result.materials[0]?.recyclable === 'Special Handling' ? 'bg-[#8E44AD]' : 'bg-[#E74C3C]'
+                        }`}
+                        style={{ 
+                          width: `${parseInt(result.materials[0]?.description.includes('global_recycling_rate') ? 
+                            result.materials[0]?.description.split('global_recycling_rate: ')[1]?.split(',')[0].replace('%', '') || '35' : 
+                            '35')}%` 
+                        }}
+                      ></div>
+                    </div>
+                    <div>
+                      <h5 className={`text-sm font-medium ${darkMode ? 'text-[#EAECEE]/80' : 'text-[#1C1C1C]/80'} mb-2 ${ibmPlexSans.className}`}>Common Issues</h5>
+                      <div className="grid grid-cols-1 gap-2">
+                        {result.materials[0]?.disposalTips.slice(0, -1).map((issue, index) => (
+                          <div key={index} className="flex items-start">
+                            <div className="flex-shrink-0 mt-1">
+                              <div className="h-2 w-2 rounded-full bg-[#F1C40F]"></div>
+                            </div>
+                            <p className={`ml-2 text-sm ${inter.className} ${darkMode ? 'text-[#EAECEE]/90' : 'text-[#1C1C1C]/90'}`}>{issue}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="p-6">
@@ -349,6 +459,34 @@ export default function RecyclingScanner() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  <h4 className={`text-sm font-medium ${darkMode ? 'text-[#EAECEE]/60' : 'text-[#1C1C1C]/60'} uppercase tracking-wider mb-3 ${ibmPlexSans.className}`}>
+                    Biotech Insights
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-sm ${inter.className} ${darkMode ? 'text-[#EAECEE]/90' : 'text-[#1C1C1C]/90'}`}>Biodegradable</span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${result.materials[0]?.description.includes('biodegradable: true') ? 'bg-[#27AE60]/20 text-[#27AE60]' : 'bg-[#E74C3C]/20 text-[#E74C3C]'}`}>
+                        {result.materials[0]?.description.includes('biodegradable: true') ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-sm ${inter.className} ${darkMode ? 'text-[#EAECEE]/90' : 'text-[#1C1C1C]/90'}`}>Bio-recycling Applicable</span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${result.materials[0]?.description.includes('bio_recycling_applicable: true') ? 'bg-[#27AE60]/20 text-[#27AE60]' : 'bg-[#E74C3C]/20 text-[#E74C3C]'}`}>
+                        {result.materials[0]?.description.includes('bio_recycling_applicable: true') ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                    <div className="mt-3">
+                      <h5 className={`text-sm font-medium ${darkMode ? 'text-[#EAECEE]/80' : 'text-[#1C1C1C]/80'} mb-2 ${ibmPlexSans.className}`}>Biotech Notes</h5>
+                      <p className={`text-sm ${inter.className} ${darkMode ? 'text-[#EAECEE]/80' : 'text-[#1C1C1C]/80'}`}>
+                        {result.materials[0]?.description.includes('biotech_notes') ? 
+                          result.materials[0]?.description.split('biotech_notes: ')[1] : 
+                          'Currently, there are no viable large-scale biotechnological methods for degrading or recycling this material.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
