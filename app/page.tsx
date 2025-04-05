@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
 import { FiCamera, FiUpload, FiX, FiCheck, FiInfo, FiArrowRight, FiRepeat, FiHome, FiActivity, FiUsers, FiUser, FiSun, FiMoon } from 'react-icons/fi';
 import { IBM_Plex_Sans, Inter } from 'next/font/google';
+import Gobin from '@/public/gobinlogo.svg'
 import Image from 'next/image';
 
 // Load fonts
@@ -175,10 +176,10 @@ export default function RecyclingScanner() {
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center">
             <div className="flex items-center">
-              <div className={`h-8 w-8 rounded-full ${darkMode ? 'bg-[#2E86C1]/20' : 'bg-[#2E86C1]/10'} flex items-center justify-center`}>
-                <FiRepeat className="text-[#2E86C1]" />
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center`}>
+                <Image src={Gobin} alt="Gobin Logo" width={32} height={32} className={`${darkMode ? '' : 'invert'}`} />
               </div>
-              <span className={`ml-2 text-xl font-bold text-[#2E86C1] ${ibmPlexSans.className}`}>Gobin</span>
+              <span className={`ml-2 text-xl font-bold ${darkMode ? 'text-[#EAECEE]' : 'text-[#1C1C1C]'} ${ibmPlexSans.className}`}>Gobin</span>
             </div>
           </div>
           <div className="flex items-center space-x-4">
@@ -187,14 +188,14 @@ export default function RecyclingScanner() {
               className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-[#2C2F33]/50"
             >
               {darkMode ? (
-                <FiSun className="h-5 w-5 text-[#EAECEE]" />
+                <FiSun className="h-5 w-5 text-[#EAECEE] cursor-pointer" />
               ) : (
-                <FiMoon className="h-5 w-5 text-[#1C1C1C]" />
+                <FiMoon className="h-5 w-5 text-[#1C1C1C] cursor-pointer" />
               )}
             </button>
-            <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-[#2C2F33]/50">
+            {/* <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-[#2C2F33]/50">
               <FiUser className="h-5 w-5 text-[#2E86C1]" />
-            </button>
+            </button> */}
           </div>
         </div>
       </header>
@@ -224,7 +225,7 @@ export default function RecyclingScanner() {
                   onClick={triggerFileInput}
                 >
                   <div className="flex justify-center">
-                    <FiUpload className={`mx-auto h-12 w-12 ${darkMode ? 'text-[#EAECEE]/50' : 'text-[#1C1C1C]/50'}`} />
+                    <FiUpload className={`mx-auto h-12 w-12 ${darkMode ? 'text-[#EAECEE]' : 'text-[#1C1C1C]'}`} />
                   </div>
                   <h4 className={`mt-4 text-lg font-medium ${darkMode ? 'text-[#EAECEE]' : 'text-[#1C1C1C]'} ${ibmPlexSans.className}`}>
                     Drag and drop or click to upload
@@ -233,7 +234,7 @@ export default function RecyclingScanner() {
                     PNG, JPG up to 5MB
                   </p>
                   <button 
-                    className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#2E86C1] hover:bg-[#2E86C1]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E86C1]/50"
+                    className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#2E86C1] hover:bg-[#2E86C1]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E86C1]/50 cursor-pointer"
                     onClick={triggerFileInput}
                   >
                     <FiCamera className="mr-2 h-4 w-4" />
@@ -399,14 +400,14 @@ export default function RecyclingScanner() {
           {step === 'results' && (
             <div className="mt-6 flex justify-center space-x-3">
               <button 
-                className={`inline-flex items-center px-4 py-2 border ${darkMode ? 'border-[#5D6D7E] text-[#EAECEE] hover:bg-[#2C2F33]/50' : 'border-gray-300 text-[#1C1C1C] hover:bg-gray-50'} rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E86C1]/50`}
+                className={`inline-flex items-center px-4 py-2 border ${darkMode ? 'border-[#5D6D7E] text-[#EAECEE] hover:bg-[#2C2F33]/50' : 'border-gray-300 text-[#1C1C1C] hover:bg-gray-50'} rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E86C1]/50 cursor-pointer`}
                 onClick={resetScanner}
               >
                 <FiCamera className="mr-2 h-4 w-4" />
                 Scan Another Item
               </button>
-              <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#2E86C1] hover:bg-[#2E86C1]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E86C1]/50">
-                Save Results
+              <button disabled={true} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#4EA6E1] hover:bg-[#2E86C1]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E86C1]/50">
+                Post results
               </button>
             </div>
           )}
