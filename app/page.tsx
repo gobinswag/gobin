@@ -355,7 +355,6 @@ export default function RecyclingScanner() {
                   </p>
                   <button 
                     className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#2E86C1] hover:bg-[#2E86C1]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E86C1]/50 cursor-pointer"
-                    onClick={triggerFileInput}
                   >
                     <FiCamera className="mr-2 h-4 w-4" />
                     Upload Image
