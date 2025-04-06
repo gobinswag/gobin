@@ -129,20 +129,24 @@ export default function RecyclingScanner() {
       const reader = new FileReader();
       reader.onload = (event) => {
         setImage(event.target?.result as string);
-        startScanning();
       };
       reader.readAsDataURL(file);
+      startScanning(file);
     }
   };
 
-  const startScanning = async () => {
+  const startScanning = async (file?: File) => {
     setIsLoading(true);
     setStep('scanning');
     
     try {
       const formData = new FormData();
-      if (fileInputRef.current?.files?.[0]) {
+      if (file) {
+        formData.append('image', file);
+      } else if (fileInputRef.current?.files?.[0]) {
         formData.append('image', fileInputRef.current.files[0]);
+      } else {
+        throw new Error('No image file found');
       }
 
       toast.loading('Analyzing your item...', {
