@@ -1,10 +1,11 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
-import { FiCamera, FiUpload, FiX, FiCheck, FiInfo, FiArrowRight, FiHome, FiActivity, FiUsers, FiSun, FiMoon } from 'react-icons/fi';
+import { FiCamera, FiUpload, FiX, FiCheck, FiInfo, FiArrowRight, FiHome, FiActivity, FiUsers, FiSun, FiMoon, FiLoader } from 'react-icons/fi';
 import { IBM_Plex_Sans, Inter } from 'next/font/google';
 import Gobin from '@/public/gobinlogo.svg'
 import Image from 'next/image';
+import Link from 'next/link';
 
 const ibmPlexSans = IBM_Plex_Sans({
   weight: ['400', '500', '600', '700'],
@@ -33,6 +34,7 @@ type ScanResult = {
   recyclingInfo: string;
   materials: MaterialType[];
   disposalRecommendation: string;
+  createdAt: string;
 };
 
 type ApiResponse = {
@@ -111,6 +113,9 @@ export default function RecyclingScanner() {
   const [showDetails, setShowDetails] = useState<boolean>(false);
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [modalStatus, setModalStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [modalMessage, setModalMessage] = useState<string>('');
 
   useEffect(() => {
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -167,7 +172,8 @@ export default function RecyclingScanner() {
             ]
           }
         ],
-        disposalRecommendation: apiData.recommendation
+        disposalRecommendation: apiData.recommendation,
+        createdAt: new Date().toISOString()
       };
 
       setResult(transformedResult);
@@ -178,6 +184,39 @@ export default function RecyclingScanner() {
       resetScanner();
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const saveResult = async () => {
+    setShowModal(true);
+    setModalStatus('loading');
+    setModalMessage('Saving your scan results...');
+    
+    try {
+      const saveResponse = await fetch('/api/results', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(result),
+      });
+      
+      if (!saveResponse.ok) {
+        console.error('Failed to save result to database');
+        setModalStatus('error');
+        setModalMessage('Failed to save result to database');
+      } else {
+        setModalStatus('success');
+        setModalMessage('Result successfully saved!');
+        // Auto-close modal after success
+        setTimeout(() => {
+          setShowModal(false);
+        }, 2000);
+      }
+    } catch (saveError) {
+      console.error('Error saving to database:', saveError);
+      setModalStatus('error');
+      setModalMessage('Error saving to database. Please try again.');
     }
   };
 
@@ -231,6 +270,10 @@ export default function RecyclingScanner() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
+            <Link href="/results" className={`inline-flex items-center justify-center p-2 rounded-full ${darkMode ? 'bg-[#2C2F33] hover:bg-[#2C2F33]/50' : 'bg-white hover:bg-gray-100'} shadow-sm`}>
+              <FiActivity className="h-5 w-5 text-[#2E86C1]" />
+              <span className={`ml-1 hidden sm:inline text-sm ${inter.className} ${darkMode ? 'text-[#EAECEE]' : 'text-[#1C1C1C]'}`}>History</span>
+            </Link>
             <button 
               onClick={toggleDarkMode}
               className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-[#2C2F33]/50"
@@ -544,7 +587,9 @@ export default function RecyclingScanner() {
                 <FiCamera className="mr-2 h-4 w-4" />
                 Scan Another Item
               </button>
-              <button disabled={true} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#4EA6E1] hover:bg-[#2E86C1]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E86C1]/50">
+              <button 
+                onClick={saveResult}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#4EA6E1] hover:bg-[#2E86C1]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E86C1]/50">
                 Post results
               </button>
             </div>
@@ -573,6 +618,41 @@ export default function RecyclingScanner() {
           </button>
         </div>
       </div>
+
+      {/* Status Modal */}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-black opacity-50" onClick={() => setShowModal(false)}></div>
+          <div className={`relative p-6 rounded-lg shadow-xl ${darkMode ? 'bg-[#2C2F33] text-white' : 'bg-white text-gray-800'} max-w-sm w-full`}>
+            <div className="flex flex-col items-center justify-center space-y-4">
+              {modalStatus === 'loading' && (
+                <div className="animate-spin">
+                  <FiLoader className="h-8 w-8 text-[#2E86C1]" />
+                </div>
+              )}
+              {modalStatus === 'success' && (
+                <div className="bg-green-100 p-2 rounded-full">
+                  <FiCheck className="h-8 w-8 text-green-500" />
+                </div>
+              )}
+              {modalStatus === 'error' && (
+                <div className="bg-red-100 p-2 rounded-full">
+                  <FiX className="h-8 w-8 text-red-500" />
+                </div>
+              )}
+              <p className={`text-center ${inter.className}`}>{modalMessage}</p>
+              {modalStatus !== 'loading' && (
+                <button 
+                  onClick={() => setShowModal(false)}
+                  className={`mt-4 px-4 py-2 rounded-md text-sm font-medium ${darkMode ? 'bg-[#5D6D7E] hover:bg-[#4A5A6A] text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
+                >
+                  Close
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
