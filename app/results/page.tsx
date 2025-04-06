@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FiArrowLeft, FiCalendar, FiInfo } from 'react-icons/fi';
 import Link from 'next/link';
 import { IBM_Plex_Sans } from 'next/font/google';
+import { toast } from 'sonner';
 
 const ibmPlexSans = IBM_Plex_Sans({
   weight: ['400', '500', '600', '700'],
@@ -47,6 +48,10 @@ export default function ResultsPage() {
   const fetchResults = async () => {
     try {
       setLoading(true);
+      toast.loading('Loading your recycling history...', {
+        id: 'fetch-results',
+      });
+      
       const response = await fetch('/api/results');
       
       if (!response.ok) {
@@ -55,9 +60,24 @@ export default function ResultsPage() {
       
       const data = await response.json();
       setResults(data);
+      
+      if (data.length === 0) {
+        toast.info('No scan history found', {
+          id: 'fetch-results',
+          description: 'Scan an item to build your recycling history.',
+        });
+      } else {
+        toast.success(`Loaded ${data.length} scan results`, {
+          id: 'fetch-results',
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       console.error('Error fetching results:', err);
+      toast.error('Failed to load results', {
+        id: 'fetch-results',
+        description: err instanceof Error ? err.message : 'An unknown error occurred',
+      });
     } finally {
       setLoading(false);
     }
@@ -68,6 +88,9 @@ export default function ResultsPage() {
       setExpandedResult(null);
     } else {
       setExpandedResult(id);
+      toast.info('Viewing details', {
+        description: 'Showing detailed information for this scan.',
+      });
     }
   };
 

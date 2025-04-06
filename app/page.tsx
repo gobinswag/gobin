@@ -6,6 +6,7 @@ import { IBM_Plex_Sans, Inter } from 'next/font/google';
 import Gobin from '@/public/gobinlogo.svg'
 import Image from 'next/image';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 const ibmPlexSans = IBM_Plex_Sans({
   weight: ['400', '500', '600', '700'],
@@ -144,6 +145,10 @@ export default function RecyclingScanner() {
         formData.append('image', fileInputRef.current.files[0]);
       }
 
+      toast.loading('Analyzing your item...', {
+        id: 'scan-toast',
+      });
+
       const response = await fetch('/api/ai', {
         method: 'POST',
         body: formData,
@@ -178,9 +183,16 @@ export default function RecyclingScanner() {
 
       setResult(transformedResult);
       setStep('results');
+      toast.success('Analysis complete!', {
+        id: 'scan-toast',
+        description: `${apiData.detected_object} - ${apiData.recyclable ? 'Recyclable' : 'Not Recyclable'}`,
+      });
     } catch (error) {
       console.error('Error scanning item:', error);
-      alert('Failed to analyze image. Please try again.');
+      toast.error('Failed to analyze image', {
+        id: 'scan-toast',
+        description: 'Please try again with a clearer image.',
+      });
       resetScanner();
     } finally {
       setIsLoading(false);
@@ -193,6 +205,10 @@ export default function RecyclingScanner() {
     setModalMessage('Saving your scan results...');
     
     try {
+      toast.loading('Saving your scan results...', {
+        id: 'save-toast',
+      });
+      
       const saveResponse = await fetch('/api/results', {
         method: 'POST',
         headers: {
@@ -205,9 +221,17 @@ export default function RecyclingScanner() {
         console.error('Failed to save result to database');
         setModalStatus('error');
         setModalMessage('Failed to save result to database');
+        toast.error('Failed to save result', {
+          id: 'save-toast',
+          description: 'Could not save to database. Please try again.',
+        });
       } else {
         setModalStatus('success');
         setModalMessage('Result successfully saved!');
+        toast.success('Result saved successfully!', {
+          id: 'save-toast',
+          description: 'You can view it in your history.',
+        });
         // Auto-close modal after success
         setTimeout(() => {
           setShowModal(false);
@@ -217,6 +241,10 @@ export default function RecyclingScanner() {
       console.error('Error saving to database:', saveError);
       setModalStatus('error');
       setModalMessage('Error saving to database. Please try again.');
+      toast.error('Error saving to database', {
+        id: 'save-toast',
+        description: 'Please try again later.',
+      });
     }
   };
 
@@ -241,6 +269,9 @@ export default function RecyclingScanner() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    toast('Ready for a new scan', {
+      description: 'Upload a new image to analyze.',
+    });
   };
 
   const triggerFileInput = () => {
